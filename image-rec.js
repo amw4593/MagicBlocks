@@ -10,13 +10,25 @@ let detectorArray = [];
 // because of the way teachable machine outputs, i need this additional array
 let resultsArray = [];
 
+// range of value for the colors
+let colorRange = 100;
+
 // rgb values for colors that the closestColor function picks between
 let possibleColors = [
-  [0, 255, 255], //cyan 0
-  [255, 255, 0], //yellow 1
-  [255, 0, 255], //magenta 2
-  [255, 255, 255], //white 3
-  [0, 0, 0], //black 4
+  [0, 255 - colorRange, 255 - colorRange], // cyan min 0
+  [0, 255, 255], // cyan 1
+  [colorRange, 255, 255], // cyan max 2
+  
+  [255 - colorRange, 255 - colorRange, 0], // yellow min 3
+  [255, 255, 0], // yellow 4
+  [255, 255, colorRange], // yellow max 5
+  
+  [255 - colorRange, 0, 255 - colorRange], // magenta min 6
+  [255, 0, 255], // magenta 7
+  [255, colorRange, 255], // magenta max 8
+  
+  [255, 255, 255], // white 9
+  [0, 0, 0], // black  10
 ];
 
 // canvas and camera feed dimensions
@@ -170,30 +182,65 @@ class Detector {
     this.l = round(l);
     this.index = index;
     
+    // gets some measurments for the smaller average slice;
+    this.padding = 0.2;
+    this.subW = round((this.w - (this.w * this.padding)) / 3);
+    
     //console.log(this.x + ", " + this.y + ", " + this.w + ", " + this.l)
 
     // color values of the detected color and the name of the closest color
     this.r = 0;
     this.g = 0;
     this.b = 0;
-    this.col = "white";
     
     
+    // holds whether the shape has been recognized
+    this.shapeIn = false;
 
     // stores the slice image
     this.slice = 0;
     
+    //final values
+    this.col = "white";
     this.shape = "blank"
     
   }
 
   update() {
+    this.shapeIn = false;
+    
     // creates the slice
     let subImg = video.get(this.x, this.y, this.w, this.l);
     
     // runs the machine learning
     classifyImg(subImg);
     
+    this.slice = subImg;
+  }
+  
+  colorUpdate() {
+    // position modifier based on shape type
+    let modX = 0;
+    let modY = 0;
+    switch (this.shape) {
+      case "square":
+        modX = this.subW;
+        modY = this.subW;
+        break;
+      default:
+        modY = this.subW;
+        modY = 0;
+        break;
+    }
+    
+    let paddingPx = round(this.padding * this.w * 0.5);
+    let subImg = this.slice.get(paddingPx + modX,
+                               paddingPx + modY,
+                               this.subW,
+                               this.subW);
+    
+     //subImg = this.slice;
+    console.log(typeof subImg)
     
     // an array of all the pixels un the slice
     let pixArray = subImg.loadPixels();
@@ -228,6 +275,8 @@ class Detector {
     avgGreen /= numPixels;
     avgBlue /= numPixels;
 
+    console.log(avgRed);
+    
     this.r = avgRed;
     this.g = avgGreen;
     this.b = avgBlue;
@@ -240,12 +289,18 @@ class Detector {
     
     switch (closest) {
       case 0:
+      case 1:
+      case 2:
         this.col = "cyan";
         break;
-      case 1:
+      case 3:
+      case 4:
+      case 5:
         this.col = "yellow";
         break;
-      case 2:
+      case 6:
+      case 7:
+      case 8:
         this.col = "magenta";
         break;
       default:
@@ -253,14 +308,16 @@ class Detector {
         break;
     }
     
-    this.slice = subImg;
+    this.updateDataArray();
   }
 
   display() {
     // results from TensorFlow are async, so this checks to make sure the data has come in before updating shapes
-    if (resultsArray.length > this.index) {
+    if ((resultsArray.length > this.index) && (this.shapeIn === false)) {
       this.shape = resultsArray[this.index];
-      this.updateDataArray();
+      this.colorUpdate();
+      this.shapeIn = true;
+      
     }
     
     // display the bounding box in the average color
@@ -268,12 +325,33 @@ class Detector {
     stroke(color(this.r, this.g, this.b));
     strokeWeight(10);
     rect(this.x, this.y, this.w, this.l);
+    
+    // color detector box
+    let modX = 0;
+    let modY = 0;
+    switch (this.shape) {
+      case "square":
+        modX = this.subW;
+        modY = this.subW;
+        break;
+      default:
+        modY = this.subW;
+        modY = 0;
+        break;
+    }
+    
+    let paddingPx = round(this.padding * this.w * 0.5);
+    rect(this.x + paddingPx + modX,
+                              this.y + paddingPx + modY,
+                               this.subW,
+                               this.subW);
 
     
     // label the color
     noStroke();
     fill(this.col);
     text(this.col + " "  + this.shape, this.x + 10, this.y + 10);
+
   }
   
   updateDataArray() {
