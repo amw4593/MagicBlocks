@@ -7,9 +7,6 @@ let dataArray = [];
 // holds an array of objects that take a slice of image and run processes on it
 let detectorArray = [];
 
-// because of the way teachable machine outputs, i need this additional array
-let resultsArray = [];
-
 // range of value for the colors
 let colorRange = 100;
 
@@ -114,7 +111,6 @@ function draw() {
 // no params
 // we can change this event as needed
 function keyPressed() {
-  resultsArray = [];
   for (let i = 0; i < detectorArray.length; i++) {
     detectorArray[i].update();
   }
@@ -146,36 +142,24 @@ function closestColor(c, colors) {
   return currentClosest;
 }
 
-//Updates the shape property
+// classification and callback functions, called from each detector object
 function classifyShape(img, detector) {
-  classifier.classify(img, (error, results) => {
+  classifier.classify(img, (results, error) => {
     if (error) {
-      console.error(error);
-      return;
+    let shape = error[0].label;
+    
+    detectorArray[detector].shape = shape;
+    detectorArray[detector].shapeIn = true;
+    detectorArray[detector].colorUpdate();
+    } else {
+    let shape = results[0].label;
+    
+    detectorArray[detector].shape = shape;
+    detectorArray[detector].shapeIn = true;
+    detectorArray[detector].colorUpdate();
     }
-    detector.shape = results[0].label;
-    detector.shapeIn = true;
-    detector.colorUpdate();
   });
 }
-// classification and callback functions, called from each detector object
-function classifyImg(img) {
-    //let MLImg = ml5.imageClassifier(img)
-    classifier.classify(img, gotResult);
-    //MLImg.remove();
-
-  }
-
-function gotResult(error, results) {
-  if (error) { 
-    let shape = error[0].label;
-    resultsArray.push(shape)
-  } else {
-    let shape = results[0].label;
-    resultsArray.push(shape)
-  }
-
-  }
 
 
 // detector class creates and stores a p5 image object, then runs a color recognition and a teachable machine process on it to
@@ -225,202 +209,115 @@ class Detector {
     let subImg = video.get(this.x, this.y, this.w, this.l);
     
     // runs the machine learning
-    classifyImg(subImg);
+    classifyShape(subImg, this.index);
     
     this.slice = subImg;
   }
   
   colorUpdate() {
+    // position modifier based on shape type
     let modX = 0;
     let modY = 0;
-    if (this.shape === "square") {
-      modX = this.subW;
-      modY = this.subW;
+    switch (this.shape) {
+      case "square":
+        modX = this.subW;
+        modY = this.subW;
+        break;
+      default:
+        modY = this.subW;
+        modY = 0;
+        break;
     }
-
+    
     let paddingPx = round(this.padding * this.w * 0.5);
-    let subImg = this.slice.get(paddingPx + modX, paddingPx + modY, this.subW, this.subW);
-    subImg.loadPixels();
+    let subImg = this.slice.get(paddingPx + modX,
+                               paddingPx + modY,
+                               this.subW,
+                               this.subW);
+    
+     //subImg = this.slice;
+    
+    // an array of all the pixels un the slice
+     subImg.loadPixels();
 
+    // declares the average variables before running
     let avgRed = 0, avgGreen = 0, avgBlue = 0;
+
     for (let y = 0; y < subImg.height; y++) {
       for (let x = 0; x < subImg.width; x++) {
+        // calculate the pixel index
         const index = (y * subImg.width + x) * 4;
-        avgRed += subImg.pixels[index];
+        
+        
+        // sum the red, green, and blue values
+        avgRed += subImg.pixels[index + 0];
         avgGreen += subImg.pixels[index + 1];
         avgBlue += subImg.pixels[index + 2];
       }
     }
+    
+    
+    // closes the pixel array
     subImg.updatePixels();
-
+    
+    // the total number of pixels
     let numPixels = subImg.pixels.length / 4;
-    this.r = avgRed / numPixels;
-    this.g = avgGreen / numPixels;
-    this.b = avgBlue / numPixels;
-
-    let closest = closestColor(color(this.r, this.g, this.b), possibleColors);
-    this.col = closest < 3 ? "cyan" : closest < 6 ? "yellow" : closest < 9 ? "magenta" : "white";
-
-    this.updateDataArray();
-  }
-
-  //OLD colorUpdate()
-  // colorUpdate() {
-  //   // position modifier based on shape type
-  //   let modX = 0;
-  //   let modY = 0;
-  //   switch (this.shape) {
-  //     case "square":
-  //       modX = this.subW;
-  //       modY = this.subW;
-  //       break;
-  //     default:
-  //       modY = this.subW;
-  //       modY = 0;
-  //       break;
-  //   }
-    
-  //   let paddingPx = round(this.padding * this.w * 0.5);
-  //   let subImg = this.slice.get(paddingPx + modX,
-  //                              paddingPx + modY,
-  //                              this.subW,
-  //                              this.subW);
-    
-  //    //subImg = this.slice;
-  //   console.log(typeof subImg)
-    
-  //   // an array of all the pixels un the slice
-  //   let pixArray = subImg.loadPixels();
-
-  //   // declares the average variables before running
-  //   let avgRed = 0;
-  //   let avgGreen = 0;
-  //   let avgBlue = 0;
-
-  //   for (let y = 0; y < subImg.height; y++) {
-  //     for (let x = 0; x < subImg.width; x++) {
-  //       // calculate the pixel index
-  //       const index = (y * subImg.width + x) * 4;
-        
-        
-  //       // sum the red, green, and blue values
-  //       avgRed += subImg.pixels[index + 0];
-  //       avgGreen += subImg.pixels[index + 1];
-  //       avgBlue += subImg.pixels[index + 2];
-  //     }
-  //   }
-    
-    
-  //   // closes the pixel array
-  //   subImg.updatePixels();
-    
-  //   // the total number of pixels
-  //   let numPixels = subImg.pixels.length / 4;
 
     
-  //   avgRed /= numPixels;
-  //   avgGreen /= numPixels;
-  //   avgBlue /= numPixels;
+    avgRed /= numPixels;
+    avgGreen /= numPixels;
+    avgBlue /= numPixels;
 
-  //   console.log(avgRed);
     
-  //   this.r = avgRed;
-  //   this.g = avgGreen;
-  //   this.b = avgBlue;
+    this.r = avgRed;
+    this.g = avgGreen;
+    this.b = avgBlue;
     
     
   
-  //   // runs the closest color function
-  //   let closest = closestColor(color(this.r, this.g, this.b), possibleColors);
-   
+    // runs the closest color function
+    let closest = closestColor(color(this.r, this.g, this.b), possibleColors);
+    this.col = closest < 3 ? "cyan" : closest < 6 ? "yellow" : closest < 9 ? "magenta" : "white";
     
-  //   switch (closest) {
-  //     case 0:
-  //     case 1:
-  //     case 2:
-  //       this.col = "cyan";
-  //       break;
-  //     case 3:
-  //     case 4:
-  //     case 5:
-  //       this.col = "yellow";
-  //       break;
-  //     case 6:
-  //     case 7:
-  //     case 8:
-  //       this.col = "magenta";
-  //       break;
-  //     default:
-  //       this.col = "white";
-  //       break;
-  //   }
-    
-  //   this.updateDataArray();
-  // }
+    this.updateDataArray();
+  }
 
   display() {
-    if ((resultsArray.length > this.index) && (this.shapeIn === false)) {
-      this.colorUpdate();
-      this.shapeIn = true;
-    }
-
+    
+    
+    // display the bounding box in the average color
     noFill();
     stroke(color(this.r, this.g, this.b));
     strokeWeight(10);
     rect(this.x, this.y, this.w, this.l);
-
-    let modX = this.shape === "square" ? this.subW : 0;
-    let modY = this.shape === "square" ? this.subW : 0;
+    
+    // color detector box
+    let modX = 0;
+    let modY = 0;
+    switch (this.shape) {
+      case "square":
+        modX = this.subW;
+        modY = this.subW;
+        break;
+      default:
+        modY = this.subW;
+        modY = 0;
+        break;
+    }
+    
     let paddingPx = round(this.padding * this.w * 0.5);
-    rect(this.x + paddingPx + modX, this.y + paddingPx + modY, this.subW, this.subW);
+    rect(this.x + paddingPx + modX,
+                              this.y + paddingPx + modY,
+                               this.subW,
+                               this.subW);
 
+    
+    // label the color
     noStroke();
     fill(this.col);
-    text(this.col + " " + this.shape, this.x + 10, this.y + 10);
+    text(this.col + " "  + this.shape, this.x + 10, this.y + 10);
+
   }
-
-  // display() {
-  //   // results from TensorFlow are async, so this checks to make sure the data has come in before updating shapes
-  //   if ((resultsArray.length > this.index) && (this.shapeIn === false)) {
-  //     this.shape = resultsArray[this.index];
-  //     this.colorUpdate();
-  //     this.shapeIn = true;
-      
-  //   }
-    
-  //   // display the bounding box in the average color
-  //   noFill();
-  //   stroke(color(this.r, this.g, this.b));
-  //   strokeWeight(10);
-  //   rect(this.x, this.y, this.w, this.l);
-    
-  //   // color detector box
-  //   let modX = 0;
-  //   let modY = 0;
-  //   switch (this.shape) {
-  //     case "square":
-  //       modX = this.subW;
-  //       modY = this.subW;
-  //       break;
-  //     default:
-  //       modY = this.subW;
-  //       modY = 0;
-  //       break;
-  //   }
-    
-  //   let paddingPx = round(this.padding * this.w * 0.5);
-  //   rect(this.x + paddingPx + modX,
-  //                             this.y + paddingPx + modY,
-  //                              this.subW,
-  //                              this.subW);
-
-    
-  //   // label the color
-  //   noStroke();
-  //   fill(this.col);
-  //   text(this.col + " "  + this.shape, this.x + 10, this.y + 10);
-
-  // }
   
   updateDataArray() {
     dataArray[this.index] = [this.col, this.shape];
