@@ -8,35 +8,36 @@ let dataArray = [];
 let detectorArray = [];
 
 // range of value for the colors
-let colorRange = 100;
+let colorRangeDark = 50;
+let colorRangeLight = 150;
 
 // rgb values for colors that the closestColor function picks between
 let possibleColors = [
-  [0, 255 - colorRange, 255 - colorRange], // cyan min 0
+  [0, 255 - colorRangeDark, 255 - colorRangeDark], // cyan min 0
   [0, 255, 255], // cyan 1
-  [colorRange, 255, 255], // cyan max 2
+  [colorRangeLight, 255, 255], // cyan max 2
   
-  [255 - colorRange, 255 - colorRange, 0], // yellow min 3
+  [255 - colorRangeDark, 255 - colorRangeDark, 0], // yellow min 3
   [255, 255, 0], // yellow 4
-  [255, 255, colorRange], // yellow max 5
+  [255, 255, colorRangeLight], // yellow max 5
   
-  [255 - colorRange, 0, 255 - colorRange], // magenta min 6
+  [255 - colorRangeDark, 0, 255 - colorRangeDark], // magenta min 6
   [255, 0, 255], // magenta 7
-  [255, colorRange, 255], // magenta max 8
+  [255, colorRangeLight, 255], // magenta max 8
   
   [255, 255, 255], // white 9
   [0, 0, 0], // black  10
 ];
 
 // canvas and camera feed dimensions
-let cWidth = 1280;
+let cWidth = 1280 * 2;
 let cHeight = 0.5625 * cWidth;
 
 // position and scale values for the paper in the frame
 let paper = {
-  x: 200,
-  y: 10,
-  w: 700,
+  x: 800,
+  y: 1000,
+  w: 340,
 };
 
 // holds the length of an "inch" of paper in pixels
@@ -46,7 +47,7 @@ let inch = paper.w / 11;
   let classifier;
 
 // Model URL
-  let imageModelURL = 'https://teachablemachine.withgoogle.com/models/L3UJu9jBg/';
+  let imageModelURL = 'https://teachablemachine.withgoogle.com/models/FIJhicqHN/';
 
 function preload() {
     classifier = ml5.imageClassifier(imageModelURL + 'model.json');
@@ -57,11 +58,12 @@ function setup() {
 
   // capture constraints object
   let constraints = {
+    flipped: true,
     video: {
       mandatory: {
         minWidth: cWidth,
         minHeight: cHeight,
-        flipped: true,
+        
       },
     },
     audio: false,
@@ -97,7 +99,7 @@ function draw() {
   // draw the paper bounding box
   noFill();
   stroke("lime");
-  strokeWeight(10);
+  strokeWeight(2);
   rect(paper.x, paper.y, paper.w, 8.5 * inch);
 
 
@@ -223,9 +225,25 @@ class Detector {
         modX = this.subW;
         modY = this.subW;
         break;
-      default:
-        modY = this.subW;
+      case "triTL":
+        modX = 0;
         modY = 0;
+        break;
+      case "triTR":
+        modX = 2 * this.subW;
+        modY = 0;
+        break;
+      case "triBL":
+        modX = 0;
+        modY = 2 * this.subW;
+        break;
+      case "triBR":
+        modX = 2 * this.subW;
+        modY = 2 * this.subW;
+        break;
+      default:
+        modX = this.subW;
+        modY = this.subW;
         break;
     }
     
@@ -288,7 +306,7 @@ class Detector {
     // display the bounding box in the average color
     noFill();
     stroke(color(this.r, this.g, this.b));
-    strokeWeight(10);
+    strokeWeight(2);
     rect(this.x, this.y, this.w, this.l);
     
     // color detector box
@@ -299,9 +317,25 @@ class Detector {
         modX = this.subW;
         modY = this.subW;
         break;
-      default:
-        modY = this.subW;
+      case "triTL":
+        modX = 0;
         modY = 0;
+        break;
+      case "triTR":
+        modX = 2 * this.subW;
+        modY = 0;
+        break;
+      case "triBL":
+        modX = 0;
+        modY = 2 * this.subW;
+        break;
+      case "triBR":
+        modX = 2 * this.subW;
+        modY = 2 * this.subW;
+        break;
+      default:
+        modX = this.subW;
+        modY = this.subW;
         break;
     }
     
