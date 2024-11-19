@@ -1,8 +1,7 @@
 const express = require('express');
 const path = require('path');
 const app = express();
-const io = require('socket.io')(app.listen(3000));
-const PORT = 3000;
+const PORT = 3001;
 
 //can either get with sockets or http request, sockets might be better for real time
 let detectorArray = [
@@ -20,14 +19,6 @@ let detectorArray = [
   ["magenta", "square"]
 ];
 
-io.on('connection', (socket) => {
-  console.log('a user connected');
-  socket.emit('detectorArray', detectorArray);
-  socket.on('disconnect', () => {
-    console.log('user disconnected');
-  });
-});
-
 // Serve static files (JavaScript, CSS, etc.)
 app.use(express.static(path.join(__dirname, '/')));
 
@@ -44,6 +35,25 @@ app.get('/image-rec', (req, res) => {
   res.sendFile(path.join(__dirname, 'recognizer.html'));
 });
 
-app.listen(PORT, () => {
+const Server = app.listen(PORT, () => {
   console.log(`Server is running at http://localhost:${PORT}`);
+});
+
+const io = require('socket.io')(Server);
+
+io.on('connection', (socket) => {
+  console.log('a user connected');
+  //socket.emit('detectorArray', detectorArray);
+  //when an update for the paper is recieved, send it to the projecter
+  //might be called a lot based on the image-rec.js code
+  socket.on('newData', (data)=>{
+    console.log(data);
+    if(data){
+      detectorArray = data;
+      socket.emit('detectorArray', detectorArray);
+    };
+  });
+  socket.on('disconnect', () => {
+    console.log('user disconnected');
+  });
 });
