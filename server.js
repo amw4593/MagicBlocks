@@ -19,6 +19,22 @@ let detectorArray = [
   ["magenta", "square"]
 ];
 
+function arraysEqual(a, b) {
+  if (a === b) return true;
+  if (a == null || b == null) return false;
+  if (a.length !== b.length) return false;
+
+  // If you don't care about the order of the elements inside
+  // the array, you should sort both arrays here.
+  // Please note that calling sort on an array will modify that array.
+  // you might want to clone your array first.
+
+  for (var i = 0; i < a.length; ++i) {
+    if (a[i] !== b[i]) return false;
+  }
+  return true;
+}
+
 // Serve static files (JavaScript, CSS, etc.)
 app.use(express.static(path.join(__dirname, '/')));
 
@@ -41,6 +57,9 @@ const Server = app.listen(PORT, () => {
 
 const io = require('socket.io')(Server);
 
+//a container for the previously sent array
+let prevData;
+
 io.on('connection', (socket) => {
   console.log('a user connected');
   //socket.emit('detectorArray', detectorArray);
@@ -49,8 +68,9 @@ io.on('connection', (socket) => {
   socket.on('newData', (data)=>{
     console.log(data);
     //catch any false fires
-    if(data){
+    if(!arraysEqual(data, prevData)){
       detectorArray = data;
+      prevData = data;
       socket.emit('detectorArray', detectorArray);
     };
   });
