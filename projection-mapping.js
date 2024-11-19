@@ -1,15 +1,15 @@
 // temporary declaration. this array should be gotten from the dataArray variable in the recognizer
 let detectorArray = [
   ["white", "blank"],
-  ["cyan", "triBR"],
-  ["magenta", "square"],
-  
   ["cyan", "square"],
-  ["yellow", "square"],
-  ["yellow", "square"],
-  
-  
   ["cyan", "triBL"],
+  
+  ["cyan", "triBR"],
+  ["yellow", "square"],
+  ["yellow", "square"],
+  
+  
+  ["magenta", "square"],
   ["yellow", "square"],
   ["magenta", "square"]
 ];
@@ -52,9 +52,9 @@ function preload() {
 function setup() {
   createCanvas(windowWidth, windowHeight, WEBGL);
   // graphics buffers
-  shapeBuffer = createGraphics(11 * inch, 8.5 * inch);
-  decorBuffer = createGraphics(11 * inch, 8.5 * inch);
-  projectionBuffer = createGraphics(11 * inch, 8.5 * inch);
+  shapeBuffer = createGraphics(8.5 * inch, 11 * inch);
+  decorBuffer = createGraphics(8.5 * inch, 11 * inch);
+  projectionBuffer = createGraphics(8.5 * inch, 11 * inch);
   saveBuffer = createGraphics(8.5 * inch, 8.5 * inch); // this one can go to the neighborhood screen
   
   
@@ -66,8 +66,8 @@ function setup() {
   
   let index = 0;
   // creates shape objects in the array
+  for (let y = 0; y < 3; y++) {
   for (let x = 0; x < 3; x++) {
-    for (let y = 0; y < 3; y++) {
       shapeArray.push(
         new Shape(
           0.5 * inch + x * 2.5 * inch,
@@ -83,8 +83,11 @@ function setup() {
 
 function draw() {
   background(0);
-
+  shapeBuffer.clear();
   decorBuffer.clear();
+  projectionBuffer.clear();
+  saveBuffer.clear();
+
 
   // draw all of the shape arrays to the correct buffers
   for (let i = 0; i < shapeArray.length; i++) {
@@ -101,6 +104,21 @@ function draw() {
   
 }
 
+// debug randomize function
+function randomizeData() {
+  for (let i = 0; i < 8; i++) {
+    detectorArray[i] = [
+      random(["cyan", "magenta", "yellow"]),
+      random(["blank", "square", "triTL", "triTR", "triBL", "triBR"])
+    ];
+  }
+
+
+  for (let i = 0; i < shapeArray.length; i++) {
+    shapeArray[i].updateShape();
+  }
+}
+
 // projection mapping config controls
 function keyPressed() {
     switch (key) {
@@ -115,8 +133,8 @@ function keyPressed() {
             pMapper.load("maps/map.json");
             break;
 
-        case 's':
-            //pMapper.save("map.json");
+        case 'r':
+            randomizeData();
             break;
     }
 }
@@ -167,10 +185,16 @@ class Shape {
   }
   
   updateShape() {
+    shapeBuffer.clear();
+    decorBuffer.clear();
+    projectionBuffer.clear();
+    saveBuffer.clear();
     this.decorArray = [];
     // gets data from the data array
     this.col = detectorArray[this.index][0];
     this.shape = detectorArray[this.index][1];
+
+    let chimneyArray = [];
     
     // gets the proper vertices based on the shape type
     switch (this.shape) {
@@ -180,19 +204,71 @@ class Shape {
         break;
       case "triTL" :
         this.vertexArray = [this.tl, this.tr, this.bl];
+        this.decorArray.push(new Decor(this.center[0], this.center[1], "triTLScaffold"));
         break;
       case "triTR" :
         this.vertexArray = [this.tr, this.tl, this.br];
+        this.decorArray.push(new Decor(this.center[0], this.center[1], "triTRScaffold"));
         break;
       case "triBL" :
         this.vertexArray = [this.bl, this.br, this.tl];
+         this.decorArray.push(new Decor(this.center[0], this.center[1], "triBLRoof"));
+
+         if (this.index < 3) {
+          let pos = random(0.3,0.7);
+          chimneyArray.push([
+            lerp(this.tl[0], this.br[0], pos),
+            lerp(this.tl[1], this.br[1], pos),
+        ]);
+         } else if (((this.index < 6) && (shapeArray[this.index - 3].shape === "blank")) ||
+            ((this.index > 6) && (shapeArray[this.index - 6].shape === "blank"))) {
+              let pos = random(0.3,0.7);
+              chimneyArray.push([
+                lerp(this.tl[0], this.br[0], pos),
+                lerp(this.tl[1], this.br[1], pos),
+            ]);
+            }
+          
         break;
       case "triBR" :
         this.vertexArray = [this.br, this.bl, this.tr];
+         this.decorArray.push(new Decor(this.center[0], this.center[1], "triBRRoof"));
+         
+        if (this.index < 3) {
+          let pos = random(0.3,0.7);
+          chimneyArray.push([
+            lerp(this.tr[0], this.bl[0], pos),
+            lerp(this.tr[1], this.bl[1], pos),
+        ]);
+         } else if (((this.index < 6) && (shapeArray[this.index - 3].shape === "blank")) ||
+            ((this.index > 6) && (shapeArray[this.index - 6].shape === "blank"))) {
+              let pos = random(0.3,0.7);
+              chimneyArray.push([
+                lerp(this.tr[0], this.bl[0], pos),
+                lerp(this.tr[1], this.bl[1], pos),
+            ]);
+            }
         break;
       default:
         this.vertexArray = [];
+        if (this.index > 2) {
+          if (((this.index < 6) && (shapeArray[this.index - 3].shape != "blank")) ||
+            ((this.index > 6) && (shapeArray[this.index - 6].shape != "blank"))) {
+
+              this.decorArray.push(new Decor(this.center[0], this.center[1], "blankScaffold"));
+
+          }
+
+        }
         break;
+    }
+
+   
+    if ((chimneyArray.length > 0)) {
+      // && (random(0, 5) < 2)
+      let chimneyChoice = random(chimneyArray);
+      console.log(chimneyChoice)
+      this.decorArray.push(new Decor(chimneyChoice[0], chimneyChoice[1], "chimney"));
     }
   }
   
@@ -231,7 +307,10 @@ class Decor {
     this.time = 0;
     this.timer = 0;
     this.start = random(10, 100);
-    
+
+    let tempDraw = createGraphics(800, 800);
+    tempDraw.textSize(30);
+
     switch (this.type) {
       case "door":
         
@@ -241,22 +320,29 @@ class Decor {
         this.sound = null;
         break;
       case "chimney":
-        
+        tempDraw.rect(350, 200, 100, 600);
+        this.img = tempDraw;
         break;
-      case "triTLRoof":
-        
+      case "triBLRoof":
+        tempDraw.text("roofBL", 400, 400);
+        this.img = tempDraw;
         break;
-      case "triTRRoof":
-        
+      case "triBRRoof":
+        tempDraw.text("roofBR", 400, 400);
+        this.img = tempDraw;
         break;
       case "blankScaffold":
-        
+        tempDraw.text("scaffolding", 400, 400);
+        this.img = tempDraw;
+
         break;
       case "triTRScaffold":
-        
+        tempDraw.text("triTRScaffold", 400, 400);
+        this.img = tempDraw;
         break;
       case "triTLScaffold":
-        
+        tempDraw.text("triTLScaffold", 400, 400);
+        this.img = tempDraw;
         break;
       case "shortPlant":
         
@@ -269,7 +355,7 @@ class Decor {
         this.sound = null;
         break;
     }
-    console.log(this.img);
+
   }
   display() {
     

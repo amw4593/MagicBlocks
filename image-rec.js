@@ -75,8 +75,8 @@ function setup() {
 
   let index = 0;
   // creates capture objects in the array
+  for (let y = 0; y < 3; y++) {
   for (let x = 0; x < 3; x++) {
-    for (let y = 0; y < 3; y++) {
       detectorArray.push(
         new Detector(
           paper.x + 0.5 * inch + x * 2.5 * inch,
@@ -100,7 +100,7 @@ function draw() {
   noFill();
   stroke("lime");
   strokeWeight(2);
-  rect(paper.x, paper.y, paper.w, 8.5 * inch);
+  rect(paper.x, paper.y, 8.5 * inch, 11 * inch);
 
 
   // display all the detectors
