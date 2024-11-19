@@ -66,12 +66,10 @@ io.on('connection', (socket) => {
   //when an update for the paper is recieved, send it to the projecter
   //might be called a lot based on the image-rec.js code
   socket.on('newData', (data)=>{
-    console.log(data);
-    //catch any false fires
-    if(!arraysEqual(data, prevData)){
-      detectorArray = data;
+    if (!arraysEqual(data, prevData)) {
+      console.log(data);
+      io.emit('detectorArray', data);
       prevData = data;
-      socket.emit('detectorArray', detectorArray);
     };
   });
   socket.on('disconnect', () => {

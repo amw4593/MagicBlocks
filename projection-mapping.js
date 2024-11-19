@@ -4,6 +4,7 @@ const socket = io();
 //update the shape with new data from detector array
 socket.on('detectorArray', (data) => {
   detectorArray = data;
+  console.log(detectorArray);
   updateData();
 });
 
