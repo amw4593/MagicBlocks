@@ -179,6 +179,7 @@ class Detector {
     this.w = round(w);
     this.l = round(l);
     this.index = index;
+    this.socket = io();
     
     // gets some measurments for the smaller average slice;
     this.padding = 0.2;
@@ -355,5 +356,6 @@ class Detector {
   
   updateDataArray() {
     dataArray[this.index] = [this.col, this.shape];
+    this.socket.emit('newData', dataArray);
   }
 }

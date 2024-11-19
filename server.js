@@ -1,8 +1,7 @@
 const express = require('express');
 const path = require('path');
 const app = express();
-const io = require('socket.io')(app.listen(3000));
-const PORT = 3000;
+const PORT = 3001;
 
 //can either get with sockets or http request, sockets might be better for real time
 let detectorArray = [
@@ -20,13 +19,21 @@ let detectorArray = [
   ["magenta", "square"]
 ];
 
-io.on('connection', (socket) => {
-  console.log('a user connected');
-  socket.emit('detectorArray', detectorArray);
-  socket.on('disconnect', () => {
-    console.log('user disconnected');
-  });
-});
+function arraysEqual(a, b) {
+  if (a === b) return true;
+  if (a == null || b == null) return false;
+  if (a.length !== b.length) return false;
+
+  // If you don't care about the order of the elements inside
+  // the array, you should sort both arrays here.
+  // Please note that calling sort on an array will modify that array.
+  // you might want to clone your array first.
+
+  for (var i = 0; i < a.length; ++i) {
+    if (a[i] !== b[i]) return false;
+  }
+  return true;
+}
 
 // Serve static files (JavaScript, CSS, etc.)
 app.use(express.static(path.join(__dirname, '/')));
@@ -44,6 +51,30 @@ app.get('/image-rec', (req, res) => {
   res.sendFile(path.join(__dirname, 'recognizer.html'));
 });
 
-app.listen(PORT, () => {
+const Server = app.listen(PORT, () => {
   console.log(`Server is running at http://localhost:${PORT}`);
+});
+
+const io = require('socket.io')(Server);
+
+//a container for the previously sent array
+let prevData;
+
+io.on('connection', (socket) => {
+  console.log('a user connected');
+  //socket.emit('detectorArray', detectorArray);
+  //when an update for the paper is recieved, send it to the projecter
+  //might be called a lot based on the image-rec.js code
+  socket.on('newData', (data)=>{
+    console.log(data);
+    //catch any false fires
+    if(!arraysEqual(data, prevData)){
+      detectorArray = data;
+      prevData = data;
+      socket.emit('detectorArray', detectorArray);
+    };
+  });
+  socket.on('disconnect', () => {
+    console.log('user disconnected');
+  });
 });
