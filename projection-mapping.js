@@ -1,11 +1,12 @@
 //create a socket connection
-// const socket = io();
+const socket = io();
 
-// //update the shape with new data from detector array
-// socket.on('detectorArray', (data) => {
-//   detectorArray = data;
-//   updateData();
-// });
+//update the shape with new data from detector array
+socket.on('detectorArray', (data) => {
+  detectorArray = data;
+  console.log(detectorArray);
+  updateData();
+});
 
 // temporary declaration. this array should be gotten from the dataArray variable in the recognizer
 let detectorArray = [
