@@ -1,11 +1,11 @@
 //create a socket connection
-const socket = io();
+// const socket = io();
 
-//update the shape with new data from detector array
-socket.on('detectorArray', (data) => {
-  detectorArray = data;
-  updateData();
-});
+// //update the shape with new data from detector array
+// socket.on('detectorArray', (data) => {
+//   detectorArray = data;
+//   updateData();
+// });
 
 // temporary declaration. this array should be gotten from the dataArray variable in the recognizer
 let detectorArray = [
@@ -36,7 +36,7 @@ let parts = {
   tallPlants: [],
   shortPlants: [],
 };
-let windowArray = ["/media/panda-window.gif", "/media/frog-window.gif", "/media/snowman-window.gif", "/media/office-window.gif"];
+let windowArray = ["/media/panda-window.gif", "/media/frog-window.gif", "/media/snowman-window.gif", "/media/office-window.gif", "/media/candles-window.gif", "/media/portraits-window.gif" ];
 let scaffoldArray = ["/media/square-support.png","/media/triBL-support.png","/media/triBR-support.png","/media/triTL-support.png","/media/triTR-support.png"];
 let roofArray = ["/media/roof-texture-1.png","/media/roof-texture-2.png","/media/roof-texture-3.png","/media/roof-texture-4.png",];
 let chimneyArray = ["/media/chimney-static.png", "/media/chimney-animated.gif"]
@@ -49,6 +49,8 @@ let inch = 100;
 let pMapper;
 let quadMap;
 let whiteMap;
+
+let showShapes = true;
 
 
 function preload() {
@@ -120,7 +122,9 @@ function draw() {
     shapeArray[i].display();
   }
   
-  projectionBuffer.image(shapeBuffer, 0, 0);
+  if (showShapes) {
+    projectionBuffer.image(shapeBuffer, 0, 0);
+  };
   projectionBuffer.image(decorBuffer, 0, 0);
 
   // draw projection mapping
@@ -161,6 +165,9 @@ function keyPressed() {
 
         case 'r':
             randomizeData();
+            break;
+        case 's':
+            showShapes = !showShapes;
             break;
     }
 }
@@ -332,8 +339,12 @@ class Shape {
     
     // draw placed animations to the decorBuffer
     decorBuffer.fill(0);
-    decorBuffer.text(this.index, this.tr[0], this.tr[1]);
-    for (let i = 0; i < this.decorArray.length; i++) {
+
+    // temporary - displays the array index of each shape
+    // decorBuffer.text(this.index, this.tl[0], this.tl[1]);
+    
+    
+    for (let i = 0; i < this.decorArray.length; i++) {  
       this.decorArray[i].display();
     }
   }
@@ -414,6 +425,9 @@ class Decor {
     if (this.timer > this.start) {
       this.time += 0.01;
       this.scaling = easeOutElastic(this.time) * 2.5 * inch;
+      if (this.type === "window") {
+        this.scaling *= 1.2;
+      }
     } else {
       this.scaling = 1;
       this.timer++;
