@@ -27,7 +27,10 @@ let parts = {
   tallPlants: [],
   shortPlants: [],
 };
-let windowArray = ["/media/doorA.gif"];
+let windowArray = ["/media/panda-window.gif", "/media/frog-window.gif", "/media/snowman-window.gif", "/media/office-window.gif"];
+let scaffoldArray = ["/media/square-support.png","/media/triBL-support.png","/media/triBR-support.png","/media/triTL-support.png","/media/triTR-support.png"];
+let roofArray = ["/media/roof-texture-1.png","/media/roof-texture-2.png","/media/roof-texture-3.png","/media/roof-texture-4.png",];
+let chimneyArray = ["/media/chimney-static.png", "/media/chimney-animated.gif"]
 
 // units
 let paperWidth = 1080;
@@ -44,6 +47,20 @@ function preload() {
   for (let i = 0; i < windowArray.length; i++) {
     parts.windows[i] = loadImage(windowArray[i]);
   }
+
+  for (let i = 0; i < scaffoldArray.length; i++) {
+    parts.scaffolds.push(loadImage(scaffoldArray[i]));
+  }
+
+  for (let i = 0; i < roofArray.length; i++) {
+    parts.roofs.push(loadImage(roofArray[i]));
+  }
+
+  for (let i = 0; i < chimneyArray.length; i++) {
+    parts.chimneys.push(loadImage(chimneyArray[i]));
+  }
+
+ 
   
   
 }
@@ -214,6 +231,16 @@ class Shape {
         this.vertexArray = [this.bl, this.br, this.tl];
          this.decorArray.push(new Decor(this.center[0], this.center[1], "triBLRoof"));
 
+         if (this.index > 2) {
+          if (((this.index < 6) && (shapeArray[this.index - 3].shape != "blank")) ||
+            ((this.index >= 6) && (shapeArray[this.index - 6].shape != "blank"))) {
+
+              this.decorArray.push(new Decor(this.center[0], this.center[1], "triBLScaffold"));
+
+          }
+
+        }
+
          if (this.index < 3) {
           let pos = random(0.3,0.7);
           chimneyArray.push([
@@ -221,7 +248,7 @@ class Shape {
             lerp(this.tl[1], this.br[1], pos),
         ]);
          } else if (((this.index < 6) && (shapeArray[this.index - 3].shape === "blank")) ||
-            ((this.index > 6) && (shapeArray[this.index - 6].shape === "blank"))) {
+            ((this.index >= 6) && (shapeArray[this.index - 6].shape === "blank"))) {
               let pos = random(0.3,0.7);
               chimneyArray.push([
                 lerp(this.tl[0], this.br[0], pos),
@@ -233,6 +260,16 @@ class Shape {
       case "triBR" :
         this.vertexArray = [this.br, this.bl, this.tr];
          this.decorArray.push(new Decor(this.center[0], this.center[1], "triBRRoof"));
+
+         if (this.index > 2) {
+          if (((this.index < 6) && (shapeArray[this.index - 3].shape != "blank")) ||
+            ((this.index >= 6) && (shapeArray[this.index - 6].shape != "blank"))) {
+
+              this.decorArray.push(new Decor(this.center[0], this.center[1], "triBRScaffold"));
+
+          }
+
+        }
          
         if (this.index < 3) {
           let pos = random(0.3,0.7);
@@ -241,7 +278,7 @@ class Shape {
             lerp(this.tr[1], this.bl[1], pos),
         ]);
          } else if (((this.index < 6) && (shapeArray[this.index - 3].shape === "blank")) ||
-            ((this.index > 6) && (shapeArray[this.index - 6].shape === "blank"))) {
+            ((this.index >= 6) && (shapeArray[this.index - 6].shape === "blank"))) {
               let pos = random(0.3,0.7);
               chimneyArray.push([
                 lerp(this.tr[0], this.bl[0], pos),
@@ -253,7 +290,7 @@ class Shape {
         this.vertexArray = [];
         if (this.index > 2) {
           if (((this.index < 6) && (shapeArray[this.index - 3].shape != "blank")) ||
-            ((this.index > 6) && (shapeArray[this.index - 6].shape != "blank"))) {
+            ((this.index >= 6) && (shapeArray[this.index - 6].shape != "blank"))) {
 
               this.decorArray.push(new Decor(this.center[0], this.center[1], "blankScaffold"));
 
@@ -268,7 +305,7 @@ class Shape {
       // && (random(0, 5) < 2)
       let chimneyChoice = random(chimneyArray);
       console.log(chimneyChoice)
-      this.decorArray.push(new Decor(chimneyChoice[0], chimneyChoice[1], "chimney"));
+      this.decorArray.push(new Decor(chimneyChoice[0], chimneyChoice[1], "chimney", this.vertexArray));
     }
   }
   
@@ -294,10 +331,11 @@ class Shape {
 }
 
 class Decor {
-  constructor(x, y, type) {
+  constructor(x, y, type, mask = undefined) {
     this.x = x;
     this.y = y;
     this.type = type;
+    this.mask = mask;
     
     this.scaling = 1;
     this.img = null;
@@ -320,30 +358,35 @@ class Decor {
         this.sound = null;
         break;
       case "chimney":
-        tempDraw.rect(350, 200, 100, 600);
-        this.img = tempDraw;
+        this.img = random(parts.chimneys);
         break;
       case "triBLRoof":
-        tempDraw.text("roofBL", 400, 400);
+        tempDraw.image(random(parts.roofs), 0, 0, 800, 800);
         this.img = tempDraw;
         break;
       case "triBRRoof":
-        tempDraw.text("roofBR", 400, 400);
+        tempDraw.push();
+        tempDraw.scale(-1, 1);
+        tempDraw.image(random(parts.roofs), -800, 0, 800, 800);
+        tempDraw.pop();
         this.img = tempDraw;
         break;
       case "blankScaffold":
-        tempDraw.text("scaffolding", 400, 400);
-        this.img = tempDraw;
-
+        this.img = parts.scaffolds[0];
         break;
       case "triTRScaffold":
-        tempDraw.text("triTRScaffold", 400, 400);
-        this.img = tempDraw;
+        this.img = parts.scaffolds[1];
         break;
       case "triTLScaffold":
-        tempDraw.text("triTLScaffold", 400, 400);
-        this.img = tempDraw;
+        this.img = parts.scaffolds[2];
         break;
+      case "triBLScaffold":
+        this.img = parts.scaffolds[4];
+        break;
+      case "triBRScaffold":
+        tempDraw.push();
+          this.img = parts.scaffolds[3];
+          break;
       case "shortPlant":
         
         break;
@@ -368,6 +411,8 @@ class Decor {
     }
     
     decorBuffer.imageMode(CENTER);
-    decorBuffer.image(this.img, this.x, this.y, this.scaling, this.scaling);
+    
+      decorBuffer.image(this.img, this.x, this.y, this.scaling, this.scaling);
+    
   }
 }
