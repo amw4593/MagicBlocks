@@ -48,6 +48,7 @@ io.on('connection', (socket) => {
   //might be called a lot based on the image-rec.js code
   socket.on('newData', (data)=>{
     console.log(data);
+    //catch any false fires
     if(data){
       detectorArray = data;
       socket.emit('detectorArray', detectorArray);
