@@ -3,9 +3,11 @@ const socket = io();
 
 //update the shape with new data from detector array
 socket.on('detectorArray', (data) => {
-  detectorArray = data;
   console.log(detectorArray);
-  updateData();
+  if(data.length = 9){
+    detectorArray = data;
+    updateData();
+  }
 });
 
 // temporary declaration. this array should be gotten from the dataArray variable in the recognizer
