@@ -16,15 +16,15 @@ let possibleColors = [
   [0, 255 - colorRangeDark, 255 - colorRangeDark], // cyan min 0
   [0, 255, 255], // cyan 1
   [colorRangeLight, 255, 255], // cyan max 2
-  
+
   [255 - colorRangeDark, 255 - colorRangeDark, 0], // yellow min 3
   [255, 255, 0], // yellow 4
   [255, 255, colorRangeLight], // yellow max 5
-  
+
   [255 - colorRangeDark, 0, 255 - colorRangeDark], // magenta min 6
   [255, 0, 255], // magenta 7
   [255, colorRangeLight, 255], // magenta max 8
-  
+
   [255, 255, 255], // white 9
   [0, 0, 0], // black  10
 ];
@@ -40,18 +40,25 @@ let paper = {
   w: 340,
 };
 
+//tester values
+// let paper = {
+//   x: 800,
+//   y: 100,
+//   w: 1440,
+// };
+
 // holds the length of an "inch" of paper in pixels
 let inch = paper.w / 11;
 
 // Classifier Variable
-  let classifier;
+let classifier;
 
 // Model URL
-  let imageModelURL = 'https://teachablemachine.withgoogle.com/models/FIJhicqHN/';
+let imageModelURL = 'https://teachablemachine.withgoogle.com/models/YAH--edjKI/';
 
 function preload() {
-    classifier = ml5.imageClassifier(imageModelURL + 'model.json');
-  }
+  classifier = ml5.imageClassifier(imageModelURL + 'model.json');
+}
 
 function setup() {
   createCanvas(cWidth, cHeight);
@@ -63,7 +70,7 @@ function setup() {
       mandatory: {
         minWidth: cWidth,
         minHeight: cHeight,
-        
+
       },
     },
     audio: false,
@@ -76,7 +83,7 @@ function setup() {
   let index = 0;
   // creates capture objects in the array
   for (let y = 0; y < 3; y++) {
-  for (let x = 0; x < 3; x++) {
+    for (let x = 0; x < 3; x++) {
       detectorArray.push(
         new Detector(
           paper.x + 0.5 * inch + x * 2.5 * inch,
@@ -108,11 +115,23 @@ function draw() {
     detectorArray[i].display();
   }
 }
-
+// time out and interval ids for the key press event
+// let timeoutID;
+// let intervalID;
 // on key press update all of the detectors and run their processes
 // no params
 // we can change this event as needed
 function keyPressed() {
+  classifyShapes();
+  //classify every ms for 10 seconds
+  // intervalID = setInterval(classifyShapes, 1);
+  // timeoutID = setTimeout(() => {
+  //   clearInterval(intervalID);
+  //   shipTheShapes();
+  // }, 10000);
+}
+
+function classifyShapes() {
   for (let i = 0; i < detectorArray.length; i++) {
     detectorArray[i].update();
   }
@@ -127,15 +146,15 @@ function keyPressed() {
 function closestColor(c, colors) {
   // the minimum distance as it loops through
   let currentMin = 999999;
-  
+
   // current closest index
   let currentClosest = 0;
-  
+
   for (let i = 0; i < colors.length; i++) {
     let [r, g, b] = colors[i];
-    
+
     let rgbDistance = dist(r, g, b, red(c), green(c), blue(c));
-    
+
     if (rgbDistance < currentMin) {
       currentMin = rgbDistance;
       currentClosest = i;
@@ -144,24 +163,57 @@ function closestColor(c, colors) {
   return currentClosest;
 }
 
+//the shapes should be processed by this point and the mode of each detector found so send it to the server
+// function shipTheShapes() {
+//   detectorArray.forEach(detector => {
+//     detector.shape = mode(detector.classyArray);
+//     console.log(detector.shape, detector.classyArray);
+//     detector.shapeIn = true;
+//     detector.colorUpdate();
+//     detector.classyArray = [];
+//   });
+// }
+
 // classification and callback functions, called from each detector object
 function classifyShape(img, detector) {
   classifier.classify(img, (results, error) => {
     if (error) {
-    let shape = error[0].label;
-    
-    detectorArray[detector].shape = shape;
-    detectorArray[detector].shapeIn = true;
-    detectorArray[detector].colorUpdate();
+      //detectorArray[detector].classyArray.push(error[0].label);
+      let shape = error[0].label;
+
+      detectorArray[detector].shape = shape;
+      detectorArray[detector].shapeIn = true;
+      detectorArray[detector].colorUpdate();
     } else {
-    let shape = results[0].label;
-    
-    detectorArray[detector].shape = shape;
-    detectorArray[detector].shapeIn = true;
-    detectorArray[detector].colorUpdate();
+      //detectorArray[detector].classyArray.push(results[0].label);
+      let shape = results[0].label;
+
+      detectorArray[detector].shape = shape;
+      detectorArray[detector].shapeIn = true;
+      detectorArray[detector].colorUpdate();
     }
   });
 }
+
+// //find the most common element in an array
+// function mode(array) {
+//   if (array.length == 0)
+//     return null;
+//   var modeMap = {};
+//   var maxEl = array[0], maxCount = 1;
+//   for (var i = 0; i < array.length; i++) {
+//     var el = array[i];
+//     if (modeMap[el] == null)
+//       modeMap[el] = 1;
+//     else
+//       modeMap[el]++;
+//     if (modeMap[el] > maxCount) {
+//       maxEl = el;
+//       maxCount = modeMap[el];
+//     }
+//   }
+//   return maxEl;
+// }
 
 
 // detector class creates and stores a p5 image object, then runs a color recognition and a teachable machine process on it to
@@ -179,44 +231,46 @@ class Detector {
     this.w = round(w);
     this.l = round(l);
     this.index = index;
+    //an array to hold the classified shapes over time
+    //this.classyArray = [];
     this.socket = io();
-    
+
     // gets some measurments for the smaller average slice;
     this.padding = 0.2;
     this.subW = round((this.w - (this.w * this.padding)) / 3);
-    
+
     //console.log(this.x + ", " + this.y + ", " + this.w + ", " + this.l)
 
     // color values of the detected color and the name of the closest color
     this.r = 0;
     this.g = 0;
     this.b = 0;
-    
-    
+
+
     // holds whether the shape has been recognized
     this.shapeIn = false;
 
     // stores the slice image
     this.slice = 0;
-    
+
     //final values
     this.col = "white";
     this.shape = "blank"
-    
+
   }
 
-  update() {
+  async update() {
     this.shapeIn = false;
-    
+
     // creates the slice
     let subImg = video.get(this.x, this.y, this.w, this.l);
-    
+
     // runs the machine learning
     classifyShape(subImg, this.index);
-    
+
     this.slice = subImg;
   }
-  
+
   colorUpdate() {
     // position modifier based on shape type
     let modX = 0;
@@ -247,17 +301,17 @@ class Detector {
         modY = this.subW;
         break;
     }
-    
+
     let paddingPx = round(this.padding * this.w * 0.5);
     let subImg = this.slice.get(paddingPx + modX,
-                               paddingPx + modY,
-                               this.subW,
-                               this.subW);
-    
-     //subImg = this.slice;
-    
+      paddingPx + modY,
+      this.subW,
+      this.subW);
+
+    //subImg = this.slice;
+
     // an array of all the pixels un the slice
-     subImg.loadPixels();
+    subImg.loadPixels();
 
     // declares the average variables before running
     let avgRed = 0, avgGreen = 0, avgBlue = 0;
@@ -266,50 +320,50 @@ class Detector {
       for (let x = 0; x < subImg.width; x++) {
         // calculate the pixel index
         const index = (y * subImg.width + x) * 4;
-        
-        
+
+
         // sum the red, green, and blue values
         avgRed += subImg.pixels[index + 0];
         avgGreen += subImg.pixels[index + 1];
         avgBlue += subImg.pixels[index + 2];
       }
     }
-    
-    
+
+
     // closes the pixel array
     subImg.updatePixels();
-    
+
     // the total number of pixels
     let numPixels = subImg.pixels.length / 4;
 
-    
+
     avgRed /= numPixels;
     avgGreen /= numPixels;
     avgBlue /= numPixels;
 
-    
+
     this.r = avgRed;
     this.g = avgGreen;
     this.b = avgBlue;
-    
-    
-  
+
+
+
     // runs the closest color function
     let closest = closestColor(color(this.r, this.g, this.b), possibleColors);
     this.col = closest < 3 ? "cyan" : closest < 6 ? "yellow" : closest < 9 ? "magenta" : "white";
-    
+
     this.updateDataArray();
   }
 
   display() {
-    
-    
+
+
     // display the bounding box in the average color
     noFill();
     stroke(color(this.r, this.g, this.b));
     strokeWeight(2);
     rect(this.x, this.y, this.w, this.l);
-    
+
     // color detector box
     let modX = 0;
     let modY = 0;
@@ -339,21 +393,21 @@ class Detector {
         modY = this.subW;
         break;
     }
-    
+
     let paddingPx = round(this.padding * this.w * 0.5);
     rect(this.x + paddingPx + modX,
-                              this.y + paddingPx + modY,
-                               this.subW,
-                               this.subW);
+      this.y + paddingPx + modY,
+      this.subW,
+      this.subW);
 
-    
+
     // label the color
     noStroke();
     fill(this.col);
-    text(this.col + " "  + this.shape, this.x + 10, this.y + 10);
+    text(this.col + " " + this.shape, this.x + 10, this.y + 10);
 
   }
-  
+
   updateDataArray() {
     dataArray[this.index] = [this.col, this.shape];
     this.socket.emit('newData', dataArray);
