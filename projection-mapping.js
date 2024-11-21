@@ -390,7 +390,7 @@ class Shape {
      && (random(0, 5) < 2)) {
       let chimneyChoice = random(chimneyArray);
       console.log(chimneyChoice)
-      this.decorArray.push(new Decor(chimneyChoice[0], chimneyChoice[1] + 0.2 * inch, "chimney", this.vertexArray));
+      this.decorArray.push(new Decor(chimneyChoice[0], chimneyChoice[1] + 0.0 * inch, "chimney", this.vertexArray));
     }
 
     if (this.index === 8 ){
