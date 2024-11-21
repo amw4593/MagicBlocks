@@ -56,6 +56,13 @@ let classifier;
 // Model URL
 let imageModelURL = 'https://teachablemachine.withgoogle.com/models/YAH--edjKI/';
 
+// function just in case we need to cheat it
+function cheat(fakeArray){
+  dataArray = fakeArray;
+  updateData();
+}
+
+
 function preload() {
   classifier = ml5.imageClassifier(imageModelURL + 'model.json');
 }
