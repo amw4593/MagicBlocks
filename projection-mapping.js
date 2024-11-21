@@ -39,7 +39,7 @@ let parts = {
   tallPlants: [],
   shortPlants: [],
 };
-let windowArray = ["/media/panda-window.gif", "/media/frog-window.gif", "/media/snowman-window.gif", "/media/office-window.gif", "/media/candles-window.gif", "/media/portraits-window.gif", "/media/cat-window.gif", "/media/christmas-tree-window.gif" ];
+let windowArray = ["/media/panda-window.gif", "/media/frog-window.gif", "/media/snowman-window.gif", "/media/office-window.gif", "/media/candles-window.gif", "/media/portraits-window.gif", "/media/cat-window.gif", "/media/christmas-tree-window.gif", "/media/balloon-window.gif", "/media/drum-window.gif"];
 let scaffoldArray = ["/media/square-support.png","/media/triBL-support.png","/media/triBR-support.png","/media/triTL-support.png","/media/triTR-support.png"];
 let roofArray = ["/media/roof-texture-1.png","/media/roof-texture-2.png","/media/roof-texture-3.png","/media/roof-texture-4.png",];
 let chimneyArray = ["/media/panda-chimney.gif", "/media/snowman-chimney.gif", "/media/chimney-animated.gif"];
@@ -149,6 +149,10 @@ function draw() {
   };
   projectionBuffer.image(decorBuffer, 0, 0);
 
+  //draws to a separate buffer for saving an image
+  saveBuffer.image(shapeBuffer, 0, 0);
+  saveBuffer.image(decorBuffer, 0, 0);
+
   // draw projection mapping
   whiteMap.display(color('white'));
   let scalar = 0.95;
@@ -188,6 +192,10 @@ function keyPressed() {
         case 's':
             showShapes = !showShapes;
             break;
+        case 'b':
+              //prints base64 of image to the console
+              console.log(saveBuffer.canvas.toDataURL());
+              break;
     }
 }
 
