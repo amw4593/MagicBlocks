@@ -57,10 +57,19 @@ let classifier;
 let imageModelURL = 'https://teachablemachine.withgoogle.com/models/YAH--edjKI/';
 
 // function just in case we need to cheat it
-function cheat(fakeArray){
+function cheat(fakeArray) {
   dataArray = fakeArray;
   updateData();
 }
+
+function updateData() {
+  for (let i = 0; i < detectorArray.length; i++) {
+    detectorArray[i].shape = dataArray[i][1];
+    detectorArray[i].col = dataArray[i][0];
+    detector.shapeIn = true;
+    detector.colorUpdate();
+  }
+};
 
 
 function preload() {
@@ -266,7 +275,7 @@ class Detector {
 
   }
 
-  async update() {
+  update() {
     this.shapeIn = false;
 
     // creates the slice
