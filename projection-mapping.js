@@ -39,10 +39,14 @@ let parts = {
   tallPlants: [],
   shortPlants: [],
 };
-let windowArray = ["/media/panda-window.gif", "/media/frog-window.gif", "/media/snowman-window.gif", "/media/office-window.gif", "/media/candles-window.gif", "/media/portraits-window.gif" ];
+let windowArray = ["/media/panda-window.gif", "/media/frog-window.gif", "/media/snowman-window.gif", "/media/office-window.gif", "/media/candles-window.gif", "/media/portraits-window.gif", "/media/cat-window.gif", "/media/christmas-tree-window.gif" ];
 let scaffoldArray = ["/media/square-support.png","/media/triBL-support.png","/media/triBR-support.png","/media/triTL-support.png","/media/triTR-support.png"];
 let roofArray = ["/media/roof-texture-1.png","/media/roof-texture-2.png","/media/roof-texture-3.png","/media/roof-texture-4.png",];
-let chimneyArray = ["/media/chimney-static.png", "/media/chimney-animated.gif"]
+let chimneyArray = ["/media/panda-chimney.gif", "/media/snowman-chimney.gif", "/media/chimney-animated.gif"];
+let doorArray = ["/media/panda-door.gif", "/media/cat-door.gif", "/media/snowman-door.gif"]
+let shortPlantArray = ["/media/small-bush-1.png", "/media/small-bush-2.png", "/media/small-bush-3.png", "/media/small-bush-4.png", ];
+let tallPlantArray = ["/media/big-tree-1.png", "/media/big-tree-2.png" ];
+
 
 // units
 let paperWidth = 1080;
@@ -54,6 +58,8 @@ let quadMap;
 let whiteMap;
 
 let showShapes = true;
+let doorExists = false;
+let foliagePossible = [];
 
 
 function preload() {
@@ -72,6 +78,18 @@ function preload() {
 
   for (let i = 0; i < chimneyArray.length; i++) {
     parts.chimneys.push(loadImage(chimneyArray[i]));
+  }
+
+  for (let i = 0; i < doorArray.length; i++) {
+    parts.doors.push(loadImage(doorArray[i]));
+  }
+
+  for (let i = 0; i < shortPlantArray.length; i++) {
+    parts.shortPlants.push(loadImage(shortPlantArray[i]));
+  }
+
+  for (let i = 0; i < tallPlantArray.length; i++) {
+    parts.tallPlants.push(loadImage(tallPlantArray[i]));
   }
 
  
@@ -139,17 +157,14 @@ function draw() {
 
 // debug randomize function
 function randomizeData() {
-  for (let i = 0; i < 8; i++) {
+  for (let i = 0; i < 9; i++) {
     detectorArray[i] = [
       random(["cyan", "magenta", "yellow"]),
       random(["blank", "square", "triTL", "triTR", "triBL", "triBR"])
     ];
   }
 
-
-  for (let i = 0; i < shapeArray.length; i++) {
-    shapeArray[i].updateShape();
-  }
+  updateData();
 }
 
 // projection mapping config controls
@@ -183,6 +198,8 @@ function windowResized() {
 
 // update all of the shapes from the detectorArray, idk where you wanna put this
 function updateData() {
+  foliagePossible = [];
+  doorExists = false;
   for (let i = 0; i < shapeArray.length; i++) {
     shapeArray[i].updateShape();
   }
@@ -216,11 +233,14 @@ class Shape {
     this.index = index;
 
     this.decorArray = [];
+
+    this.foliage = "none";
     
     this.updateShape();
   }
   
   updateShape() {
+    
     shapeBuffer.clear();
     decorBuffer.clear();
     projectionBuffer.clear();
@@ -231,20 +251,55 @@ class Shape {
     this.shape = detectorArray[this.index][1];
 
     let chimneyArray = [];
+    this.foliage = "shortPlant";
     
     // gets the proper vertices based on the shape type
     switch (this.shape) {
       case "square" :
         this.vertexArray = [this.tl, this.tr, this.br, this.bl];
-        this.decorArray.push(new Decor(this.center[0], this.center[1], "window"));
+
+        let type = "window";
+        let addition = 0;
+
+
+       
+        if (this.index >= 6) {
+
+          this.foliage = "shortPlant";
+          
+          if (doorExists === false) {
+          
+          if ((random(1,3) >= 2) || (this.index === 8)) {
+            type = "door";
+            addition = 0.30 * inch;
+            doorExists = true;
+            this.foliage = "none";
+          }
+        }
+
+        console.log(this.foliage)
+        foliagePossible.push(this.foliage);
+
+        }
+
+
+        this.decorArray.push(new Decor(this.center[0], this.center[1] + addition, type));
         break;
       case "triTL" :
         this.vertexArray = [this.tl, this.tr, this.bl];
         this.decorArray.push(new Decor(this.center[0], this.center[1], "triTLScaffold"));
+
+        if (this.index >= 6) {
+          foliagePossible.push(this.foliage);
+        }
         break;
       case "triTR" :
         this.vertexArray = [this.tr, this.tl, this.br];
         this.decorArray.push(new Decor(this.center[0], this.center[1], "triTRScaffold"));
+
+        if (this.index >= 6) {
+          foliagePossible.push(this.foliage);
+        }
         break;
       case "triBL" :
         this.vertexArray = [this.bl, this.br, this.tl];
@@ -275,6 +330,10 @@ class Shape {
             ]);
             }
           
+
+            if (this.index >= 6) {
+              foliagePossible.push(this.foliage);
+            }
         break;
       case "triBR" :
         this.vertexArray = [this.br, this.bl, this.tr];
@@ -304,6 +363,11 @@ class Shape {
                 lerp(this.tr[1], this.bl[1], pos),
             ]);
             }
+
+
+            if (this.index >= 6) {
+              foliagePossible.push(this.foliage);
+            }
         break;
       default:
         this.vertexArray = [];
@@ -316,16 +380,41 @@ class Shape {
           }
 
         }
+
+        if (this.index >= 6) {
+          foliagePossible.push("tallPlant");
+        }
         break;
     }
 
    
-    if ((chimneyArray.length > 0)) {
-      // && (random(0, 5) < 2)
+    if ((chimneyArray.length > 0) 
+     && (random(0, 5) < 2)) {
       let chimneyChoice = random(chimneyArray);
       console.log(chimneyChoice)
-      this.decorArray.push(new Decor(chimneyChoice[0], chimneyChoice[1], "chimney", this.vertexArray));
+      this.decorArray.push(new Decor(chimneyChoice[0], chimneyChoice[1] + 0.0 * inch, "chimney", this.vertexArray));
     }
+
+    if (this.index === 8 ){
+      for (let i = 0.7 * inch; i < 7.8 * inch; i += random(0.8 * inch, 2.2 * inch)) {
+        let makeFoliage = "tallPlant";
+
+        if ((i >= 0.5 * inch) && (i < 3 * inch)) {
+          makeFoliage = foliagePossible[0];
+        };
+        if ((i >= 3 * inch) && (i < 5.5 * inch)) {
+          makeFoliage = foliagePossible[1];
+        };
+        if ((i >= 5.5 * inch) && (i < 8 * inch)) {
+          makeFoliage = foliagePossible[2];
+        };
+        
+        if (makeFoliage != "none") {
+          this.decorArray.push(new Decor(i, 6.9 * inch, makeFoliage, this.vertexArray));
+        }
+      }
+    }
+    
   }
   
   display() {
@@ -351,14 +440,17 @@ class Shape {
       this.decorArray[i].display();
     }
   }
+
+
+  
 }
 
 class Decor {
-  constructor(x, y, type, mask = undefined) {
+  constructor(x, y, type, index = undefined) {
     this.x = x;
     this.y = y;
     this.type = type;
-    this.mask = mask;
+    
     
     this.scaling = 1;
     this.img = null;
@@ -369,16 +461,16 @@ class Decor {
     this.timer = 0;
     this.start = random(10, 100);
 
+    // really need to destroy this
     let tempDraw = createGraphics(800, 800);
     tempDraw.textSize(30);
 
     switch (this.type) {
       case "door":
-        
+        this.img = random(parts.doors);
         break;
       case "window":
         this.img = random(parts.windows);
-        this.sound = null;
         break;
       case "chimney":
         this.img = random(parts.chimneys);
@@ -411,10 +503,10 @@ class Decor {
           this.img = parts.scaffolds[3];
           break;
       case "shortPlant":
-        
+        this.img = random(parts.shortPlants);
         break;
       case "tallPlant":
-        
+        this.img = random(parts.tallPlants);
         break;
       default:
         this.img = null;
@@ -429,6 +521,12 @@ class Decor {
       this.time += 0.01;
       this.scaling = easeOutElastic(this.time) * 2.5 * inch;
       if (this.type === "window") {
+        this.scaling *= 1.4;
+      }
+      if (this.type === "door") {
+        this.scaling *= 1.1;
+      }
+      if (this.type === "chimney") {
         this.scaling *= 1.2;
       }
     } else {
