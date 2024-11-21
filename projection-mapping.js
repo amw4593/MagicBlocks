@@ -45,6 +45,7 @@ let doorArray = ["/media/panda-door.gif", "/media/cat-door.gif", "/media/snowman
 let shortPlantArray = ["/media/small-bush-1.png", "/media/small-bush-2.png", "/media/small-bush-3.png", "/media/small-bush-4.png", ];
 let tallPlantArray = ["/media/big-tree-1.png", "/media/big-tree-2.png" ];
 
+let popSound;
 
 // units
 let paperWidth = 1080;
@@ -90,7 +91,7 @@ function preload() {
     parts.tallPlants.push(loadImage(tallPlantArray[i]));
   }
 
- 
+  popSound = loadSound("/media/pop.mp3");
   
   
 }
@@ -457,7 +458,7 @@ class Decor {
     this.scaling = 0;
     this.time = 0;
     this.timer = 0;
-    this.start = random(10, 100);
+    this.start = round(random(10, 100));
 
     // really need to destroy this
     let tempDraw = createGraphics(800, 800);
@@ -517,6 +518,9 @@ class Decor {
     
     if (this.timer > this.start) {
       this.time += 0.01;
+
+     
+
       this.scaling = easeOutElastic(this.time) * 2.5 * inch;
       if (this.type === "window") {
         this.scaling *= 1.4;
@@ -530,6 +534,10 @@ class Decor {
     } else {
       this.scaling = 1;
       this.timer++;
+    }
+
+    if (this.timer === this.start - 9) {
+      popSound.play();
     }
     
     decorBuffer.imageMode(CENTER);
